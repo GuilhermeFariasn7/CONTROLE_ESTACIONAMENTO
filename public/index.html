@@ -16,20 +16,35 @@
 <body class="bg-gray-100 h-screen flex overflow-hidden">
     <!-- SIDEBAR -->
     <aside class="w-20 bg-gray-900 text-white flex flex-col items-center py-6 gap-4">
-        <button class="sidebar-btn" title="Vagas">
-            🅿️
+        <button class="sidebar-btn active group" title="Vagas" data-route="vagas">
+            <svg class="w-6 h-6 group-hover:text-green-400 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 13.5v-3a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-2a.5.5 0 01-.5-.5z"/>
+                <path d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm3-1a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V6a1 1 0 00-1-1H6z"/>
+            </svg>
         </button>
 
-        <button class="sidebar-btn" title="Gráficos">
-            📊
+        <button class="sidebar-btn group" title="Gráficos" data-route="graficos">
+            <svg class="w-6 h-6 group-hover:text-blue-400 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 3v16a2 2 0 002 2h16"/>
+                <path d="M7 14l4-4 4 4 6-6"/>
+                <path d="M17 9h4v4"/>
+            </svg>
         </button>
 
-        <button class="sidebar-btn" title="Mensais">
-            👥
+        <button class="sidebar-btn group" title="Mensais" data-route="mensais">
+            <svg class="w-6 h-6 group-hover:text-purple-400 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+                <path d="M21 21v-2a4 4 0 00-3-3.85"/>
+            </svg>
         </button>
 
-        <button class="sidebar-btn" title="Configurações">
-            ⚙️
+        <button class="sidebar-btn group" title="Configurações" data-route="configuracoes">
+            <svg class="w-6 h-6 group-hover:text-yellow-400 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
         </button>
     </aside>
 
@@ -37,7 +52,7 @@
     <main class="flex-1 flex flex-col overflow-hidden">
         <!-- HEADER -->
         <header class="w-full bg-white shadow px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">Dashboard - Estacionamento UNESC</h1>
+            <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard - Estacionamento UNESC</h1>
 
             <div class="text-gray-600">
                 Última atualização:
@@ -45,67 +60,14 @@
             </div>
         </header>
 
-        <!-- CONTEÚDO -->
-        <div class="flex-1 p-6 overflow-auto">
-            <!-- CARDS -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="card">
-                    <div class="card-title">Total de vagas</div>
-                    <div id="totalVagas" class="card-value">10</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">Ocupadas</div>
-                    <div id="ocupadas" class="card-value text-red-600">0</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">Livres</div>
-                    <div id="livres" class="card-value text-green-600">0</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">Status Geral</div>
-                    <div id="statusBox" class="status-box status-desconhecido">Carregando...</div>
-                </div>
-            </div>
-
-            <!-- MAPA -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <!-- CABEÇALHO DO MAPA COM LEGENDA -->
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">Mapa do Campus UNESC</h3>
-
-                    <!-- LEGENDA -->
-                    <div class="legenda">
-                        <div class="legenda-item">
-                            <div class="legenda-cor livre"></div>
-                            <span class="text-sm">Vaga Livre</span>
-                        </div>
-                        <div class="legenda-item">
-                            <div class="legenda-cor ocupado"></div>
-                            <span class="text-sm">Vaga Ocupada</span>
-                        </div>
-                        <div class="legenda-item">
-                            <div class="legenda-cor desconhecido"></div>
-                            <span class="text-sm">Status Desconhecido</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-center">
-                    <div id="mapaContainer" class="mapa-wrapper">
-                        <!-- IMAGEM DO MAPA -->
-                        <img src="./img/MAPAUNESC.png" id="mapa" class="mapa-image" alt="Mapa do Campus UNESC">
-
-                        <!-- VAGAS DINÂMICAS SERÃO INSERIDAS AQUI PELO JAVASCRIPT -->
-                    </div>
-                </div>
-            </div>
+        <!-- CONTEÚDO DINÂMICO -->
+        <div id="app-content" class="flex-1 p-6 overflow-auto">
+            <!-- O conteúdo será carregado dinamicamente aqui pelo JavaScript -->
         </div>
     </main>
 
     <script src="./js/app.js"></script>
+    <script src="./js/router.js"></script>
 </body>
 
 </html>

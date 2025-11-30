@@ -205,7 +205,44 @@ body {
 .legenda-cor.desconhecido {
     background: #6b7280;
 }
+.sidebar-btn.active {
+    background-color: #4B5563;
+    border-radius: 8px;
+    transform: scale(1.05);
+}
 
+.sidebar-btn {
+    transition: all 0.3s ease;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.sidebar-btn:hover {
+    background-color: #374151;
+    border-radius: 8px;
+}
+.sidebar-btn {
+    @apply transition-all duration-300 ease-in-out p-3 rounded-lg cursor-pointer hover:bg-gray-700 flex items-center justify-center;
+}
+
+.sidebar-btn.active {
+    @apply bg-gray-700 transform scale-110;
+}
+
+.sidebar-btn.active svg,
+.sidebar-btn.active i {
+    @apply text-green-400;
+}
+
+/* Para ícones SVG */
+.sidebar-btn svg {
+    @apply transition-colors duration-300;
+}
+
+/* Para ícones Font Awesome */
+.sidebar-btn i {
+    @apply transition-colors duration-300;
+}
 /* ANIMAÇÕES */
 @keyframes pulse {
 
