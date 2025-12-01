@@ -69,4 +69,6 @@ router.get('/vagas-populares', async (req, res) => {
     }
 });
 
+
+
 export default router;

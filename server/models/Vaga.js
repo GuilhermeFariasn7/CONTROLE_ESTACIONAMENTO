@@ -66,9 +66,16 @@ export class Vaga {
                         [tempoOcupacao, ocupacao.rows[0].id]
                     );
 
-                    // Atualizar tempo no histórico
+                    // CORREÇÃO: Atualizar tempo no histórico usando subquery
                     await client.query(
-                        'UPDATE historico_estados_vagas SET tempo_ocupacao = $1 WHERE vaga_id = $2 AND estado_novo = $3 ORDER BY created_at DESC LIMIT 1',
+                        `UPDATE historico_estados_vagas 
+                         SET tempo_ocupacao = $1 
+                         WHERE id = (
+                             SELECT id FROM historico_estados_vagas 
+                             WHERE vaga_id = $2 AND estado_novo = $3 
+                             ORDER BY created_at DESC 
+                             LIMIT 1
+                         )`,
                         [tempoOcupacao, vagaId, novoStatus]
                     );
                 }

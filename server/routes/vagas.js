@@ -25,6 +25,7 @@ router.get('/estatisticas', async (req, res) => {
     }
 });
 
+
 // PUT /api/vagas/:id/status - Atualizar status de uma vaga
 router.put('/:id/status', async (req, res) => {
     try {

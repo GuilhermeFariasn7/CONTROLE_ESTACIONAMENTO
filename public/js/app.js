@@ -4,22 +4,22 @@ let intervaloAtualizacao = null;
 
 // Configurações de estilo das vagas
 const configVagas = {
-    formato: 'quadrado', // 'circulo' ou 'quadrado'
-    tamanho: '15px',     // Tamanho base
-    fontSize: '7px',    // Tamanho do texto
-    borderRadius: '4px'  // Cantos arredondados (0px para quadrado perfeito)
+    formato: 'quadrado',
+    tamanho: '15px',
+    fontSize: '7px',
+    borderRadius: '4px'
 };
 
-// Configurações do layout do mapa
+// Configurações do layout do mapa - SEM CURVATURA
 const configMapa = {
-    curvatura: 30, // px de curvatura que você mencionou
     startLeft: 138,
     startTop: 25,
     espacamentoHorizontal: 17,
-    espacamentoVertical: 20 // Espaço entre linhas
+    espacamentoVertical: 20
 };
 
-// Inicializar vagas no mapa baseado nos dados do servidor
+// ========== SISTEMA DE VAGAS ==========
+
 function inicializarVagas(estados) {
     const mapaContainer = document.getElementById('mapaContainer');
     if (!mapaContainer) {
@@ -40,26 +40,13 @@ function inicializarVagas(estados) {
 
     // Calcula posições dinamicamente baseado no número de vagas
     vagasConfig = vagasOrdenadas.map((vagaId, index) => {
-        const totalVagas = vagasOrdenadas.length;
-
-        let posicao;
-        const colunas = 5; // Número de colunas fixo
-
-        // Calcula linha e coluna
+        const colunas = 5;
         const linha = Math.floor(index / colunas);
         const coluna = index % colunas;
 
-        // Aplica curvatura progressiva baseada na linha
-        // Quanto mais para baixo, mais ajuste na horizontal para acompanhar a curvatura
-        const ajusteCurvatura = (linha * configMapa.curvatura) / 10; // Ajuste progressivo
-
-        // Para linhas pares, ajusta para a direita, para ímpares para a esquerda
-      
-        const ajusteHorizontal = linha % 2 === 0 ? ajusteCurvatura : -ajusteCurvatura;
-
-        posicao = {
+        const posicao = {
             top: `${configMapa.startTop + (linha * configMapa.espacamentoVertical)}px`,
-            left: `${configMapa.startLeft + (coluna * configMapa.espacamentoHorizontal) + ajusteHorizontal}px`
+            left: `${configMapa.startLeft + (coluna * configMapa.espacamentoHorizontal)}px`
         };
 
         return {
@@ -101,14 +88,12 @@ function inicializarVagas(estados) {
         mapaContainer.appendChild(vagaElement);
     });
 
-    console.log(`Vagas posicionadas: ${vagasConfig.length} vagas com curvatura ajustada`);
+    console.log(`Vagas posicionadas: ${vagasConfig.length} vagas em linhas retas`);
 }
 
-// Atualizar status de todas as vagas
 async function atualizarStatus() {
     try {
         const response = await fetch("/api/status");
-
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -122,7 +107,6 @@ async function atualizarStatus() {
         // Verificar se estamos na página de vagas
         const mapaContainer = document.getElementById('mapaContainer');
         if (mapaContainer) {
-            // Se for a primeira vez ou se novas vagas foram adicionadas, inicializa
             if (Object.keys(data).length !== vagasConfig.length) {
                 inicializarVagas(data);
             }
@@ -131,20 +115,16 @@ async function atualizarStatus() {
             Object.keys(data).forEach(vagaId => {
                 const estado = data[vagaId];
                 const vagaElement = document.getElementById(vagaId);
-
                 if (vagaElement) {
-                    // Remove classes antigas
                     vagaElement.classList.remove("livre", "ocupado", "desconhecido");
-                    // Adiciona nova classe
                     vagaElement.classList.add(estado);
                 }
             });
 
-            // Atualizar contadores
             atualizarContadores(data);
         }
 
-        // Atualizar horário (sempre que houver uma atualização)
+        // Atualizar horário
         const elementoAtualizacao = document.getElementById("ultimaAtualizacao");
         if (elementoAtualizacao) {
             elementoAtualizacao.textContent = new Date().toLocaleTimeString('pt-BR');
@@ -160,18 +140,14 @@ async function atualizarStatus() {
     }
 }
 
-// Atualizar contadores de vagas livres e ocupadas
 function atualizarContadores(data) {
     let ocupadas = 0;
     let livres = 0;
     const totalVagas = Object.keys(data).length;
 
     Object.values(data).forEach(estado => {
-        if (estado === 'ocupado') {
-            ocupadas++;
-        } else if (estado === 'livre') {
-            livres++;
-        }
+        if (estado === 'ocupado') ocupadas++;
+        else if (estado === 'livre') livres++;
     });
 
     const elementoOcupadas = document.getElementById('ocupadas');
@@ -203,24 +179,18 @@ function atualizarContadores(data) {
     }
 }
 
-// Função para obter estados atuais (usada pelo router)
 function getCurrentStates() {
     return window.currentStates || {};
 }
 
-// Iniciar atualização automática
 function iniciarAtualizacaoAutomatica() {
-    // Para qualquer intervalo existente
     if (intervaloAtualizacao) {
         clearInterval(intervaloAtualizacao);
     }
-
-    // Inicia novo intervalo
     intervaloAtualizacao = setInterval(atualizarStatus, 2000);
     console.log("Atualização automática iniciada (2 segundos)");
 }
 
-// Parar atualização automática (útil para quando sair da página)
 function pararAtualizacaoAutomatica() {
     if (intervaloAtualizacao) {
         clearInterval(intervaloAtualizacao);
@@ -229,12 +199,271 @@ function pararAtualizacaoAutomatica() {
     }
 }
 
-// Função para forçar atualização imediata (útil quando volta para a página de vagas)
 function forcarAtualizacao() {
     atualizarStatus();
 }
 
-// Exportar funções para acesso global
+// ========== FUNÇÕES DE ESTATÍSTICAS E GRÁFICOS ==========
+
+async function carregarEstatisticas() {
+    try {
+        const response = await fetch("/api/vagas/estatisticas");
+        if (!response.ok) throw new Error('Erro ao carregar estatísticas');
+        const data = await response.json();
+        console.log("Estatísticas recebidas:", data);
+        return data;
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+        return null;
+    }
+}
+
+async function carregarHistoricoOcupacao() {
+    try {
+        const response = await fetch("/api/vagas/historico-ocupacao");
+        if (!response.ok) throw new Error('Erro ao carregar histórico');
+        const data = await response.json();
+        console.log("Histórico recebido:", data);
+        return data;
+    } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+        return [];
+    }
+}
+
+async function carregarTempoMedioOcupacao() {
+    try {
+        const response = await fetch("/api/vagas/tempo-medio-ocupacao");
+        if (!response.ok) throw new Error('Erro ao carregar tempo médio');
+        const data = await response.json();
+        console.log("Tempo médio recebido:", data);
+        return data;
+    } catch (error) {
+        console.error('Erro ao carregar tempo médio:', error);
+        return [];
+    }
+}
+
+function inicializarGraficos(estatisticas, historico, tempoMedio) {
+    console.log("Inicializando gráficos com:", { estatisticas, historico, tempoMedio });
+
+    // Gráfico de Pizza - Distribuição atual
+    const ctxPizza = document.getElementById('graficoPizza');
+    if (ctxPizza && estatisticas) {
+        try {
+            if (ctxPizza.chart) {
+                ctxPizza.chart.destroy();
+            }
+
+            const vagasIndisponiveis = (estatisticas.total_vagas || 0) -
+                ((estatisticas.vagas_ocupadas || 0) + (estatisticas.vagas_livres || 0));
+
+            ctxPizza.chart = new Chart(ctxPizza, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ocupadas', 'Livres', 'Indisponíveis'],
+                    datasets: [{
+                        data: [
+                            estatisticas.vagas_ocupadas || 0,
+                            estatisticas.vagas_livres || 0,
+                            vagasIndisponiveis > 0 ? vagasIndisponiveis : 0
+                        ],
+                        backgroundColor: ['#ef4444', '#22c55e', '#eab308'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao criar gráfico de pizza:', error);
+        }
+    }
+
+    // Gráfico de Linha - Histórico de ocupação
+    const ctxLinha = document.getElementById('graficoLinha');
+    if (ctxLinha && historico.length > 0) {
+        try {
+            if (ctxLinha.chart) {
+                ctxLinha.chart.destroy();
+            }
+
+            const historicoRecente = historico.slice(-10);
+            const labels = historicoRecente.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            });
+
+            const dados = historicoRecente.map(item =>
+                parseFloat(item.percentual_ocupacao || 0)
+            );
+
+            ctxLinha.chart = new Chart(ctxLinha, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '% de Ocupação',
+                        data: dados,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Percentual de Ocupação'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Horário'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao criar gráfico de linha:', error);
+        }
+    }
+
+    // Gráfico de Barras - Tempo médio de ocupação por vaga
+    const ctxBarras = document.getElementById('graficoBarras');
+    if (ctxBarras && tempoMedio.length > 0) {
+        try {
+            if (ctxBarras.chart) {
+                ctxBarras.chart.destroy();
+            }
+
+            const labels = tempoMedio.map(item => `Vaga ${item.numero}`);
+            const dados = tempoMedio.map(item => parseFloat(item.tempo_medio_minutos || 0));
+
+            ctxBarras.chart = new Chart(ctxBarras, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tempo Médio (minutos)',
+                        data: dados,
+                        backgroundColor: '#8b5cf6',
+                        borderColor: '#7c3aed',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutos'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Número da Vaga'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao criar gráfico de barras:', error);
+        }
+    }
+}
+
+async function carregarTodasEstatisticas() {
+    if (!document.getElementById('graficoPizza')) {
+        console.log('Elementos de gráficos não encontrados');
+        return;
+    }
+
+    try {
+        console.log('Carregando todas as estatísticas...');
+
+        const [estatisticas, historico, tempoMedio] = await Promise.all([
+            carregarEstatisticas(),
+            carregarHistoricoOcupacao(),
+            carregarTempoMedioOcupacao()
+        ]);
+
+        console.log('Dados carregados:', { estatisticas, historico, tempoMedio });
+
+        if (estatisticas) {
+            document.getElementById('totalVagasStats').textContent = estatisticas.total_vagas || 0;
+            document.getElementById('vagasOcupadasStats').textContent = estatisticas.vagas_ocupadas || 0;
+            document.getElementById('vagasLivresStats').textContent = estatisticas.vagas_livres || 0;
+            document.getElementById('percentualOcupacao').textContent =
+                (estatisticas.percentual_ocupacao || 0).toFixed(1) + '%';
+
+            inicializarGraficos(estatisticas, historico, tempoMedio);
+        } else {
+            console.error('Não foi possível carregar estatísticas');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar todas as estatísticas:', error);
+    }
+}
+
+// ========== EXPORTAÇÃO PARA USO GLOBAL ==========
+
 window.inicializarVagas = inicializarVagas;
 window.atualizarStatus = atualizarStatus;
 window.getCurrentStates = getCurrentStates;
@@ -243,13 +472,16 @@ window.pararAtualizacaoAutomatica = pararAtualizacaoAutomatica;
 window.forcarAtualizacao = forcarAtualizacao;
 window.vagasConfig = vagasConfig;
 
-// Inicializar quando a página carregar
+window.carregarTodasEstatisticas = carregarTodasEstatisticas;
+window.carregarEstatisticas = carregarEstatisticas;
+window.carregarHistoricoOcupacao = carregarHistoricoOcupacao;
+window.carregarTempoMedioOcupacao = carregarTempoMedioOcupacao;
+window.inicializarGraficos = inicializarGraficos;
+
+// ========== INICIALIZAÇÃO ==========
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Dashboard inicializado");
-
-    // Iniciar atualização automática
     iniciarAtualizacaoAutomatica();
-
-    // Fazer primeira atualização imediatamente
     atualizarStatus();
 });

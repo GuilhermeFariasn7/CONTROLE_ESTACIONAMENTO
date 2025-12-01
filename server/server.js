@@ -74,6 +74,102 @@ app.listen(3000, async () => {
     iniciarMQTT();
 });
 
+// ========== ROTAS PARA ESTATÍSTICAS ==========
+
+// Rota para estatísticas gerais
+app.get('/api/estatisticas', async (req, res) => {
+    try {
+        const { Vaga } = await import('./models/Vaga.js');
+        const estatisticas = await Vaga.getEstatisticasGerais();
+        
+        console.log("Estatísticas enviadas:", estatisticas);
+        res.json(estatisticas);
+    } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+        res.status(500).json({ 
+            error: 'Erro ao carregar estatísticas',
+            details: error.message 
+        });
+    }
+});
+
+/* // Rota para histórico de ocupação
+app.get('/api/historico-ocupacao', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM snapshots_ocupacao 
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+            ORDER BY timestamp ASC
+            LIMIT 50
+        `);
+        
+        console.log(`Histórico enviado: ${result.rows.length} registros`);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao buscar histórico:', error);
+        res.status(500).json({ 
+            error: 'Erro ao carregar histórico',
+            details: error.message 
+        });
+    }
+}); */
+
+// Rota para tempo médio de ocupação por vaga
+app.get('/api/tempo-medio-ocupacao', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                v.numero,
+                ROUND(AVG(o.tempo_total), 2) as tempo_medio_minutos,
+                COUNT(o.id) as total_ocupacoes
+            FROM ocupacoes_ativas o
+            JOIN vagas v ON o.vaga_id = v.id
+            WHERE o.tempo_total IS NOT NULL 
+            AND o.tempo_total > 0
+            GROUP BY v.numero
+            ORDER BY v.numero
+        `);
+        
+        console.log(`Tempo médio enviado: ${result.rows.length} vagas`);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao buscar tempo médio:', error);
+        res.status(500).json({ 
+            error: 'Erro ao carregar tempo médio',
+            details: error.message 
+        });
+    }
+});
+
+// Rota alternativa caso a tabela snapshots_ocupacao não exista
+app.get('/api/historico-simples', async (req, res) => {
+    try {
+        // Histórico simulado baseado nas vagas atuais
+        const { Vaga } = await import('./models/Vaga.js');
+        const estatisticas = await Vaga.getEstatisticasGerais();
+        
+        const historico = [
+            {
+                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                percentual_ocupacao: Math.max(0, (estatisticas.percentual_ocupacao || 0) - 10)
+            },
+            {
+                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+                percentual_ocupacao: estatisticas.percentual_ocupacao || 0
+            },
+            {
+                timestamp: new Date().toISOString(),
+                percentual_ocupacao: estatisticas.percentual_ocupacao || 0
+            }
+        ];
+        
+        res.json(historico);
+    } catch (error) {
+        console.error('Erro ao criar histórico simples:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Rota para debug das vagas
 app.get("/api/debug-vagas", async (req, res) => {
   try {

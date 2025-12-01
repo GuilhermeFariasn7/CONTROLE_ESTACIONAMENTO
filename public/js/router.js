@@ -9,11 +9,11 @@ class Router {
         };
 
         this.currentRoute = 'vagas';
+        this.intervaloGraficos = null;
         this.init();
     }
 
     init() {
-        // Configurar event listeners para os botões da sidebar
         document.querySelectorAll('.sidebar-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const route = e.currentTarget.getAttribute('data-route');
@@ -21,15 +21,26 @@ class Router {
             });
         });
 
-        // Renderizar rota inicial
         this.navigate('vagas');
     }
 
     navigate(route) {
         if (this.routes[route]) {
+            this.pararAtualizacoes();
             this.currentRoute = route;
             this.updateSidebar(route);
             this.routes[route].call(this);
+        }
+    }
+
+    pararAtualizacoes() {
+        if (window.pararAtualizacaoAutomatica) {
+            window.pararAtualizacaoAutomatica();
+        }
+
+        if (this.intervaloGraficos) {
+            clearInterval(this.intervaloGraficos);
+            this.intervaloGraficos = null;
         }
     }
 
@@ -72,7 +83,6 @@ class Router {
 
             <!-- MAPA -->
             <div class="bg-white rounded-lg shadow p-6">
-                <!-- CABEÇALHO DO MAPA COM LEGENDA -->
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800">Mapa do Campus UNESC</h3>
 
@@ -95,10 +105,7 @@ class Router {
 
                 <div class="flex justify-center">
                     <div id="mapaContainer" class="mapa-wrapper">
-                        <!-- IMAGEM DO MAPA -->
                         <img src="./img/MAPAUNESC.png" id="mapa" class="mapa-image" alt="Mapa do Campus UNESC">
-
-                        <!-- VAGAS DINÂMICAS SERÃO INSERIDAS AQUI PELO JAVASCRIPT -->
                     </div>
                 </div>
             </div>
@@ -106,42 +113,37 @@ class Router {
 
         document.getElementById('app-content').innerHTML = content;
 
-        // AGORA: Forçar a recriação completa das vagas quando voltar para esta aba
+        if (window.iniciarAtualizacaoAutomatica) {
+            window.iniciarAtualizacaoAutomatica();
+        }
+
         this.recriarVagasNoMapa();
     }
 
-    // Função para recriar as vagas no mapa
     async recriarVagasNoMapa() {
         try {
-            // Primeiro, buscar os dados atualizados do servidor
             const response = await fetch("/api/status");
             if (!response.ok) throw new Error('Erro ao buscar dados');
 
             const data = await response.json();
             console.log("Dados recebidos para recriação do mapa:", data);
 
-            // Salvar estados globalmente
             window.currentStates = data;
 
-            // Usar a função inicializarVagas para criar as vagas
             if (window.inicializarVagas) {
                 window.inicializarVagas(data);
             } else {
                 console.error("Função inicializarVagas não encontrada!");
             }
 
-            // Atualizar contadores
             if (window.atualizarContadores) {
                 window.atualizarContadores(data);
             }
 
-            // Atualizar horário
             const elementoAtualizacao = document.getElementById("ultimaAtualizacao");
             if (elementoAtualizacao) {
                 elementoAtualizacao.textContent = new Date().toLocaleTimeString('pt-BR');
             }
-
-            console.log("Vagas recriadas com sucesso no mapa");
 
         } catch (error) {
             console.error('Erro ao recriar vagas no mapa:', error);
@@ -157,47 +159,118 @@ class Router {
     renderGraficos() {
         document.getElementById('pageTitle').textContent = 'Gráficos e Estatísticas - Estacionamento UNESC';
 
-        const content = `
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Gráfico de Ocupação por Horário -->
+        const content = `           
+
+            <!-- GRÁFICOS -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Ocupação por Horário</h3>
-                    <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
-                        <p class="text-gray-500">Gráfico de ocupação será implementado aqui</p>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Distribuição de Vagas</h3>
+                    <div class="h-80">
+                        <canvas id="graficoPizza"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Histórico de Ocupação</h3>
+                    <div class="h-80">
+                        <canvas id="graficoLinha"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Tempo Médio de Ocupação por Vaga</h3>
+                    <div class="h-80">
+                        <canvas id="graficoBarras"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Histórico de Ocupação por Vaga</h3>
+                    <div class="flex gap-2">
+                        <select id="filtroVaga" class="p-2 border rounded">
+                            <option value="todas">Todas as Vagas</option>
+                            <!-- Vagas serão preenchidas via JS -->
+                        </select>
+                        <select id="filtroData" class="p-2 border rounded">
+                            <option value="hoje">Hoje</option>
+                            <option value="ontem">Ontem</option>
+                            <option value="7dias">Últimos 7 dias</option>
+                            <option value="30dias">Últimos 30 dias</option>
+                        </select>
+                        <button onclick="router.carregarHistoricoTabela()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Filtrar
+                        </button>
                     </div>
                 </div>
 
-                <!-- Vagas Mais Utilizadas -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Vagas Mais Utilizadas</h3>
-                    <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
-                        <p class="text-gray-500">Ranking de vagas será implementado aqui</p>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="py-3 px-4 text-left">Vaga</th>
+                                <th class="py-3 px-4 text-left">Ocupada em</th>
+                                <th class="py-3 px-4 text-left">Livre em</th>
+                                <th class="py-3 px-4 text-left">Tempo Ocupada</th>
+                                <th class="py-3 px-4 text-left">Status Atual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistorico">
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-gray-500">
+                                    Carregando histórico...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+                
+                <div class="mt-4 text-sm text-gray-500">
+                    <p>Mostrando <span id="totalRegistros">0</span> registros históricos</p>
+                </div>
+            </div>
+            </div>
 
-                <!-- Estatísticas de Uso -->
-                <div class="bg-white rounded-lg shadow p-6 col-span-1 lg:col-span-2">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Estatísticas de Uso</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="text-center p-4 bg-blue-50 rounded-lg">
-                            <div class="text-2xl font-bold text-blue-600" id="mediaOcupacao">--%</div>
-                            <div class="text-sm text-gray-600">Média de Ocupação</div>
-                        </div>
-                        <div class="text-center p-4 bg-green-50 rounded-lg">
-                            <div class="text-2xl font-bold text-green-600" id="vagaMaisPopular">--</div>
-                            <div class="text-sm text-gray-600">Vaga Mais Popular</div>
-                        </div>
-                        <div class="text-center p-4 bg-purple-50 rounded-lg">
-                            <div class="text-2xl font-bold text-purple-600" id="picoUtilizacao">--:--</div>
-                            <div class="text-sm text-gray-600">Horário de Pico</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="mt-6 flex justify-center gap-4">
+                <button onclick="router.carregarTodasEstatisticas()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    🔄 Atualizar Dados
+                </button>
             </div>
         `;
 
         document.getElementById('app-content').innerHTML = content;
-        this.carregarDadosGraficos();
+
+        this.carregarChartJS().then(() => {
+            this.carregarTodasEstatisticas();
+            this.iniciarAtualizacaoGraficos();
+        });
+    }
+
+    async carregarChartJS() {
+        return new Promise((resolve, reject) => {
+            if (window.Chart) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    iniciarAtualizacaoGraficos() {
+        if (this.intervaloGraficos) {
+            clearInterval(this.intervaloGraficos);
+        }
+
+        this.intervaloGraficos = setInterval(() => {
+            if (document.getElementById('graficoPizza')) {
+                this.carregarTodasEstatisticas();
+            }
+        }, 30000);
     }
 
     // ROTA: Controle Mensal
@@ -213,7 +286,6 @@ class Router {
                     </button>
                 </div>
 
-                <!-- Filtros -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <input type="text" placeholder="Buscar por nome..." class="p-2 border rounded">
                     <select class="p-2 border rounded">
@@ -225,7 +297,6 @@ class Router {
                     <button class="bg-gray-600 text-white p-2 rounded">Filtrar</button>
                 </div>
 
-                <!-- Tabela de Mensalistas -->
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
                         <thead>
@@ -283,18 +354,27 @@ class Router {
         document.getElementById('app-content').innerHTML = content;
     }
 
-    // Métodos para carregar dados
-    async carregarDadosGraficos() {
+    // ========== MÉTODOS PARA CARREGAR DADOS ==========
+
+    async carregarTodasEstatisticas() {
+        if (!document.getElementById('graficoPizza')) return;
+
         try {
-            const response = await fetch('/api/estatisticas');
-            const data = await response.json();
+            // USAR SEMPRE AS FUNÇÕES GLOBAIS do app.js
+            const [estatisticas, historico, tempoMedio] = await Promise.all([
+                window.carregarEstatisticas(),
+                window.carregarHistoricoOcupacao(),
+                window.carregarTempoMedioOcupacao()
+            ]);
 
-            document.getElementById('mediaOcupacao').textContent = data.mediaOcupacao + '%';
-            document.getElementById('vagaMaisPopular').textContent = data.vagaMaisPopular;
-            document.getElementById('picoUtilizacao').textContent = data.picoUtilizacao;
+            if (estatisticas) {
 
+
+                // USAR A FUNÇÃO GLOBAL do app.js
+                window.inicializarGraficos(estatisticas, historico, tempoMedio);
+            }
         } catch (error) {
-            console.error('Erro ao carregar dados dos gráficos:', error);
+            console.error('Erro ao carregar estatísticas:', error);
         }
     }
 
@@ -337,7 +417,6 @@ class Router {
     salvarConfiguracoes() {
         const intervalo = document.getElementById('intervaloAtualizacao').value;
         const mqttUrl = document.getElementById('mqttUrl').value;
-
         console.log('Salvando configurações:', { intervalo, mqttUrl });
         alert('Configurações salvas com sucesso!');
     }
@@ -346,4 +425,4 @@ class Router {
 // Inicializar o router quando a página carregar
 document.addEventListener('DOMContentLoaded', function () {
     window.router = new Router();
-});
+}); 
