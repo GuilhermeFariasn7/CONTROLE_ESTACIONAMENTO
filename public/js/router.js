@@ -436,7 +436,7 @@ class Router {
             vagas.forEach(vaga => {
                 const option = document.createElement('option');
                 option.value = vaga.id;
-                option.textContent = `Vaga ${vaga.numero}`;
+                option.textContent = `${vaga.numero}`;
                 select.appendChild(option);
             });
 
@@ -534,7 +534,7 @@ class Router {
 
             return `
                 <tr class="hover:bg-gray-50">
-                    <td class="py-3 px-3 font-medium text-sm">Vaga ${item.numero_vaga}</td>
+                    <td class="py-3 px-3 font-medium text-sm"> ${item.numero_vaga}</td>
                     <td class="py-3 px-3 text-sm">${ocupadaEm}</td>
                     <td class="py-3 px-3 text-sm">${livreEm}</td>
                     <td class="py-3 px-3 text-sm font-medium">${tempoFormatado}</td>
