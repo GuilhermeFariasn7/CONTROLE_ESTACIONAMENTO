@@ -155,85 +155,84 @@ class Router {
         }
     }
 
-    // ROTA: Gráficos e Estatísticas
+    // ROTA: Gráficos e Estatísticas - AGORA APENAS 2 COLUNAS
     renderGraficos() {
         document.getElementById('pageTitle').textContent = 'Gráficos e Estatísticas - Estacionamento UNESC';
 
         const content = `           
-
-            <!-- GRÁFICOS -->
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+            <!-- GRÁFICOS LADO A LADO -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- COLUNA 1: Gráfico de Distribuição -->
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Distribuição de Vagas</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Distribuição de Vagas</h3>
+                        <span class="text-sm text-gray-500" id="atualizadoEm"></span>
+                    </div>
                     <div class="h-80">
                         <canvas id="graficoPizza"></canvas>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Histórico de Ocupação</h3>
-                    <div class="h-80">
-                        <canvas id="graficoLinha"></canvas>
-                    </div>
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                <!-- COLUNA 2: Tabela de Histórico -->
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Tempo Médio de Ocupação por Vaga</h3>
-                    <div class="h-80">
-                        <canvas id="graficoBarras"></canvas>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800">Histórico de Ocupação</h3>
+                        <div class="flex gap-2">
+                            <select id="filtroVaga" class="p-2 border rounded text-sm">
+                                <option value="todas">Todas as Vagas</option>
+                            </select>
+                            <select id="filtroData" class="p-2 border rounded text-sm">
+                                <option value="hoje">Hoje</option>
+                                <option value="ontem">Ontem</option>
+                                <option value="7dias">Últimos 7 dias</option>
+                                <option value="30dias">Últimos 30 dias</option>
+                            </select>
+                            <button onclick="router.carregarHistoricoTabela()" 
+                                    class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700">
+                                Filtrar
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">Histórico de Ocupação por Vaga</h3>
-                    <div class="flex gap-2">
-                        <select id="filtroVaga" class="p-2 border rounded">
-                            <option value="todas">Todas as Vagas</option>
-                            <!-- Vagas serão preenchidas via JS -->
-                        </select>
-                        <select id="filtroData" class="p-2 border rounded">
-                            <option value="hoje">Hoje</option>
-                            <option value="ontem">Ontem</option>
-                            <option value="7dias">Últimos 7 dias</option>
-                            <option value="30dias">Últimos 30 dias</option>
-                        </select>
-                        <button onclick="router.carregarHistoricoTabela()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                            Filtrar
+
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="min-w-full bg-white">
+                            <thead class="sticky top-0 bg-gray-50">
+                                <tr>
+                                    <th class="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase">Vaga</th>
+                                    <th class="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase">Ocupada em</th>
+                                    <th class="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase">Livre em</th>
+                                    <th class="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase">Tempo</th>
+                                    <th class="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaHistorico" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-gray-500">
+                                        <div class="animate-pulse">Carregando histórico...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center text-sm text-gray-500">
+                        <p>Mostrando <span id="totalRegistros" class="font-medium">0</span> registros</p>
+                        <button onclick="router.carregarHistoricoTabela()" 
+                                class="text-blue-600 hover:text-blue-800 text-sm">
+                            ↻ Atualizar
                         </button>
                     </div>
                 </div>
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="py-3 px-4 text-left">Vaga</th>
-                                <th class="py-3 px-4 text-left">Ocupada em</th>
-                                <th class="py-3 px-4 text-left">Livre em</th>
-                                <th class="py-3 px-4 text-left">Tempo Ocupada</th>
-                                <th class="py-3 px-4 text-left">Status Atual</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaHistorico">
-                            <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-500">
-                                    Carregando histórico...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="mt-4 text-sm text-gray-500">
-                    <p>Mostrando <span id="totalRegistros">0</span> registros históricos</p>
-                </div>
-            </div>
             </div>
 
-            <div class="mt-6 flex justify-center gap-4">
-                <button onclick="router.carregarTodasEstatisticas()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-                    🔄 Atualizar Dados
+            <!-- BOTÃO DE ATUALIZAÇÃO GERAL -->
+            <div class="mt-8 flex justify-center">
+                <button onclick="router.atualizarPaginaGraficos()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Atualizar Todos os Dados
                 </button>
             </div>
         `;
@@ -241,9 +240,25 @@ class Router {
         document.getElementById('app-content').innerHTML = content;
 
         this.carregarChartJS().then(() => {
-            this.carregarTodasEstatisticas();
+            this.carregarGraficoDistribuicao();
+            this.carregarFiltrosVagas();
+            this.carregarHistoricoTabela();
             this.iniciarAtualizacaoGraficos();
         });
+    }
+
+    // Função para atualizar toda a página de gráficos
+    atualizarPaginaGraficos() {
+        if (document.getElementById('graficoPizza')) {
+            this.carregarGraficoDistribuicao();
+        }
+        this.carregarHistoricoTabela();
+
+        // Atualizar timestamp
+        const atualizadoEm = document.getElementById('atualizadoEm');
+        if (atualizadoEm) {
+            atualizadoEm.textContent = `Atualizado: ${new Date().toLocaleTimeString('pt-BR')}`;
+        }
     }
 
     async carregarChartJS() {
@@ -261,6 +276,19 @@ class Router {
         });
     }
 
+    // Carregar apenas o gráfico de distribuição
+    async carregarGraficoDistribuicao() {
+        try {
+            const estatisticas = await window.carregarEstatisticas();
+            if (estatisticas && window.inicializarGraficos) {
+                // Passar apenas os dados necessários para o gráfico de pizza
+                window.inicializarGraficos(estatisticas, null, null);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar gráfico:', error);
+        }
+    }
+
     iniciarAtualizacaoGraficos() {
         if (this.intervaloGraficos) {
             clearInterval(this.intervaloGraficos);
@@ -268,9 +296,9 @@ class Router {
 
         this.intervaloGraficos = setInterval(() => {
             if (document.getElementById('graficoPizza')) {
-                this.carregarTodasEstatisticas();
+                this.carregarGraficoDistribuicao();
             }
-        }, 30000);
+        }, 30000); // Atualiza a cada 30 segundos
     }
 
     // ROTA: Controle Mensal
@@ -356,28 +384,6 @@ class Router {
 
     // ========== MÉTODOS PARA CARREGAR DADOS ==========
 
-    async carregarTodasEstatisticas() {
-        if (!document.getElementById('graficoPizza')) return;
-
-        try {
-            // USAR SEMPRE AS FUNÇÕES GLOBAIS do app.js
-            const [estatisticas, historico, tempoMedio] = await Promise.all([
-                window.carregarEstatisticas(),
-                window.carregarHistoricoOcupacao(),
-                window.carregarTempoMedioOcupacao()
-            ]);
-
-            if (estatisticas) {
-
-
-                // USAR A FUNÇÃO GLOBAL do app.js
-                window.inicializarGraficos(estatisticas, historico, tempoMedio);
-            }
-        } catch (error) {
-            console.error('Erro ao carregar estatísticas:', error);
-        }
-    }
-
     async carregarMensalistas() {
         try {
             const response = await fetch('/api/mensalistas');
@@ -414,6 +420,150 @@ class Router {
         }
     }
 
+    // ========== MÉTODOS PARA TABELA DE HISTÓRICO ==========
+
+    async carregarFiltrosVagas() {
+        try {
+            const response = await fetch('/api/vagas');
+            const vagas = await response.json();
+
+            const select = document.getElementById('filtroVaga');
+            if (!select) return;
+
+            // Limpar e adicionar opções
+            select.innerHTML = '<option value="todas">Todas as Vagas</option>';
+
+            vagas.forEach(vaga => {
+                const option = document.createElement('option');
+                option.value = vaga.id;
+                option.textContent = `Vaga ${vaga.numero}`;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar vagas para filtro:', error);
+        }
+    }
+
+    async carregarHistoricoTabela() {
+        try {
+            const vagaId = document.getElementById('filtroVaga')?.value || 'todas';
+            const periodo = document.getElementById('filtroData')?.value || 'hoje';
+
+            console.log(`Carregando histórico - Vaga: ${vagaId}, Período: ${periodo}`);
+
+            // Montar URL com filtros
+            let url = '/api/estatisticas/historico-tabela';
+            const params = new URLSearchParams();
+
+            if (vagaId !== 'todas') params.append('vaga_id', vagaId);
+            if (periodo !== 'hoje') params.append('periodo', periodo);
+
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Erro ao buscar histórico');
+
+            const historico = await response.json();
+
+            // Atualizar tabela
+            this.atualizarTabelaHistorico(historico);
+
+        } catch (error) {
+            console.error('Erro ao carregar histórico tabela:', error);
+            this.mostrarErroTabela('Erro ao carregar histórico: ' + error.message);
+        }
+    }
+
+    atualizarTabelaHistorico(historico) {
+        const tbody = document.getElementById('tabelaHistorico');
+        const totalRegistros = document.getElementById('totalRegistros');
+
+        if (!tbody) return;
+
+        if (!historico || historico.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="py-8 text-center text-gray-500">
+                        Nenhum registro histórico encontrado.
+                    </td>
+                </tr>
+            `;
+            if (totalRegistros) totalRegistros.textContent = '0';
+            return;
+        }
+
+        // Formatar cada linha
+        const linhasHTML = historico.map(item => {
+            // Formatar datas de forma mais curta
+            const formatarData = (dataString) => {
+                if (!dataString) return '--';
+                const data = new Date(dataString);
+                return data.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit'
+                });
+            };
+
+            const ocupadaEm = formatarData(item.ocupada_em);
+            const livreEm = formatarData(item.livre_em);
+
+            // Formatar tempo ocupado
+            let tempoFormatado = '--';
+            if (item.tempo_ocupacao_minutos) {
+                const horas = Math.floor(item.tempo_ocupacao_minutos / 60);
+                const minutos = item.tempo_ocupacao_minutos % 60;
+
+                if (horas > 0) {
+                    tempoFormatado = `${horas}h ${minutos}min`;
+                } else if (item.tempo_ocupacao_minutos < 1) {
+                    tempoFormatado = '<1min';
+                } else {
+                    tempoFormatado = `${minutos}min`;
+                }
+            }
+
+            // Determinar status atual
+            const statusAtual = item.livre_em ? 'LIVRE' : 'OCUPADA';
+            const statusClass = statusAtual === 'LIVRE' ?
+                'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-3 px-3 font-medium text-sm">Vaga ${item.numero_vaga}</td>
+                    <td class="py-3 px-3 text-sm">${ocupadaEm}</td>
+                    <td class="py-3 px-3 text-sm">${livreEm}</td>
+                    <td class="py-3 px-3 text-sm font-medium">${tempoFormatado}</td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-1 rounded text-xs ${statusClass}">
+                            ${statusAtual}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = linhasHTML;
+        if (totalRegistros) totalRegistros.textContent = historico.length.toString();
+    }
+
+    mostrarErroTabela(mensagem) {
+        const tbody = document.getElementById('tabelaHistorico');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="py-8 text-center text-red-500">
+                        ${mensagem}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
     salvarConfiguracoes() {
         const intervalo = document.getElementById('intervaloAtualizacao').value;
         const mqttUrl = document.getElementById('mqttUrl').value;
@@ -425,4 +575,4 @@ class Router {
 // Inicializar o router quando a página carregar
 document.addEventListener('DOMContentLoaded', function () {
     window.router = new Router();
-}); 
+});
